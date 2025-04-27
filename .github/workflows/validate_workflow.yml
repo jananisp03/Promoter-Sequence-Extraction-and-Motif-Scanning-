@@ -1,0 +1,42 @@
+name: Validate Galaxy Workflow
+
+on:
+  push:
+    paths:
+      - '*.ga'
+  pull_request:
+    paths:
+      - '*.ga'
+  workflow_dispatch:
+
+jobs:
+  validate-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ephemeris planemo
+          
+      - name: Validate workflow
+        run: |
+          planemo lint Galaxy-Workflow-Promoter_Sequence_Extraction_and_Motif_Scanning.ga
+          
+      - name: Check workflow metadata
+        run: |
+          python -c "
+          import json
+          with open('Galaxy-Workflow-Promoter_Sequence_Extraction_and_Motif_Scanning.ga', 'r') as f:
+              wf = json.load(f)
+          assert wf.get('license') is not None, 'Workflow is missing license information'
+          assert wf.get('name') is not None, 'Workflow is missing a name'
+          assert wf.get('tags') is not None, 'Workflow should have tags'
+          print('Workflow metadata validation passed')
+          "
